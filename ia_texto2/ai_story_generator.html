@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Histórias Marcantes com IA</title>
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" id="manifest-link">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Merriweather', 'serif'],
+            title: ['Cinzel', 'serif']
+          },
+          colors: {
+            brand: {
+              50: '#f4f3ff',
+              100: '#ebe9fe',
+              200: '#d9d6fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.6);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header & Tabs -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 flex flex-col">
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-title font-bold text-lg sm:text-xl tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
+            Fábulas & Lendas IA
+          </h1>
+          <p class="text-xs text-slate-400">Gerador Episódico Interativo</p>
+        </div>
+      </div>
+      
+      <!-- Botão de Instalar App (PWA) -->
+      <button id="install-btn" class="hidden bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition shadow-lg shadow-indigo-500/20 active:scale-95">
+        <i data-lucide="download" class="w-4 h-4"></i> Instalar App
+      </button>
+    </div>
+    
+    <!-- Barra de Abas -->
+    <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 flex items-end gap-1 overflow-x-auto custom-scrollbar pt-2" id="tabs-container">
+      <!-- Abas serão injetadas aqui -->
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden h-[calc(100vh-100px)]">
+    
+    <!-- Painel Lateral: Personagens e Configuração -->
+    <section class="lg:col-span-4 flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2 pb-10" id="config-panel">
+      
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i>
+            <h2 class="font-semibold text-slate-200">Elenco da História</h2>
+          </div>
+          <span class="text-xs font-medium px-2 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" id="char-count-tag">0 Personagens</span>
+        </div>
+
+        <div id="character-form" class="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 transition-opacity">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center justify-between">
+            <span>Adicionar Personagem</span>
+            <button type="button" onclick="quickFillCharacter()" class="text-indigo-400 hover:underline flex items-center gap-1 normal-case font-normal text-xs">
+              <i data-lucide="wand-2" class="w-3 h-3"></i> Sugestão
+            </button>
+          </h3>
+          
+          <input type="text" id="char-name" placeholder="Nome (Ex: Arthur)" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-indigo-500">
+          
+          <div class="grid grid-cols-2 gap-2">
+            <select id="char-role" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-2.5 py-2 text-xs text-slate-100 focus:border-indigo-500">
+              <option value="Protagonista">Protagonista</option>
+              <option value="Antagonista">Antagonista</option>
+              <option value="Secundário">Secundário</option>
+            </select>
+            <input type="text" id="char-archetype" placeholder="Traço (Ex: Corajoso)" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-indigo-500">
+          </div>
+
+          <input type="text" id="char-motivation" placeholder="Motivação Oculta" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-indigo-500">
+          <input type="text" id="char-flaw" placeholder="Ponto Fraco / Segredo" class="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-100 focus:border-indigo-500">
+
+          <button onclick="addCharacter()" class="w-full bg-slate-800 hover:bg-slate-700 text-indigo-300 font-medium py-2 rounded-lg text-xs transition border border-indigo-500/30">
+            Adicionar ao Elenco
+          </button>
+        </div>
+
+        <div id="characters-list" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1"></div>
+      </div>
+
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-800">
+          <i data-lucide="sliders" class="w-5 h-5 text-indigo-400"></i>
+          <h2 class="font-semibold text-slate-200">Mundo & Atmosfera</h2>
+        </div>
+
+        <div id="settings-form" class="space-y-3">
+          <select id="story-genre" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-indigo-500">
+            <option value="Fantasia Épica">Fantasia Épica</option>
+            <option value="Ficção Científica">Ficção Científica</option>
+            <option value="Mistério & Noir">Mistério & Noir</option>
+            <option value="Terror & Gótico">Terror & Gótico</option>
+          </select>
+
+          <select id="story-tone" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-indigo-500">
+            <option value="Épico e Inspirador">Épico e Inspirador</option>
+            <option value="Tenso e Sombrio">Tenso e Sombrio</option>
+            <option value="Melancólico">Melancólico e Reflexivo</option>
+            <option value="Dinâmico">Ágil e Cheio de Ação</option>
+          </select>
+          <textarea id="story-setting" rows="2" placeholder="Descreva o cenário (Ex: Uma cidade flutuante...)" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-100 focus:border-indigo-500 resize-none"></textarea>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Área da História (Chat/Episódios) -->
+    <section class="lg:col-span-8 flex flex-col bg-slate-900/90 border border-slate-800 rounded-2xl shadow-xl overflow-hidden relative h-full">
+      
+      <!-- Lista de Episódios -->
+      <div id="episodes-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar scroll-smooth">
+        <!-- IA Welcome Message -->
+        <div class="flex gap-4">
+          <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-1">
+            <i data-lucide="bot" class="w-4 h-4 text-white"></i>
+          </div>
+          <div class="bg-slate-800 border border-slate-700 rounded-2xl rounded-tl-none p-4 text-slate-200 text-sm sm:text-base">
+            Olá! Eu serei o seu mestre de RPG e narrador hoje. <br><br>
+            Adicione os personagens no painel ao lado, configure o mundo e, quando estiver pronto, me diga abaixo <strong>como a nossa história começa</strong>. Eu criarei o primeiro episódio!
+          </div>
+        </div>
+      </div>
+
+      <!-- Player de Áudio Oculto (Usado pelo TTS) -->
+      <audio id="tts-player" class="hidden"></audio>
+
+      <!-- Loading State -->
+      <div id="typing-indicator" class="hidden p-4 flex gap-2 items-center text-slate-400 text-sm">
+        <i data-lucide="feather" class="w-4 h-4 animate-bounce"></i>
+        <span>A IA está escrevendo o próximo episódio...</span>
+      </div>
+
+      <!-- Área de Input do Usuário -->
+      <div class="border-t border-slate-800 bg-slate-950/80 p-4 backdrop-blur-sm">
+        
+        <!-- Sugestão Oculta -->
+        <div id="ai-suggestion-box" class="hidden mb-3">
+          <div class="flex items-center justify-between text-xs text-indigo-400 mb-1">
+            <span class="flex items-center gap-1 font-semibold"><i data-lucide="lightbulb" class="w-3 h-3"></i> Sugestão da IA:</span>
+          </div>
+          <button onclick="useSuggestion()" id="ai-suggestion-text" class="text-left w-full bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-lg p-2 text-sm text-indigo-200 transition">
+            <!-- Sugestão entra aqui -->
+          </button>
+        </div>
+
+        <div class="flex gap-2 items-end">
+          <textarea id="user-prompt" rows="2" placeholder="O que acontece agora? (Ex: Kaelen saca a espada e questiona o estranho...)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:border-indigo-500 resize-none custom-scrollbar focus:outline-none transition"></textarea>
+          
+          <button onclick="submitAction()" id="send-action-btn" class="h-[52px] px-5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl shadow-lg flex items-center justify-center transition active:scale-95 shrink-0">
+            <i data-lucide="send" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 border border-slate-700 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-sm">
+    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-400" id="toast-icon"></i>
+    <span id="toast-message">Notificação</span>
+  </div>
+
+  <script>
+    // --- ESTADO DA APLICAÇÃO ---
+    let appState = {
+      stories: [], // { id, title, characters, genre, tone, setting, episodes: [], history: [] }
+      activeStoryId: null // null significa "Nova Aba"
+    };
+
+    let tempCharacters = []; // Personagens da aba "Nova História"
+    let currentSuggestion = "";
+    let deferredPrompt; // Guarda o evento de instalação do Android
+
+    window.onload = function() {
+      lucide.createIcons();
+      setupPWA();
+      loadState();
+      renderTabs();
+      renderActiveStory();
+    };
+
+    // --- PWA (Instalação Nativa Android/iOS) ---
+    function setupPWA() {
+      // Injeta dinamicamente o manifest.json necessário para ser reconhecido como App
+      const manifest = {
+        name: "Fábulas & Lendas IA",
+        short_name: "Fábulas IA",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#0f172a",
+        theme_color: "#0f172a",
+        icons: [{
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 2L2 22h20L12 2z'/%3E%3C/svg%3E",
+          sizes: "192x192",
+          type: "image/svg+xml"
+        }, {
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236366f1'%3E%3Cpath d='M12 2L2 22h20L12 2z'/%3E%3C/svg%3E",
+          sizes: "512x512",
+          type: "image/svg+xml"
+        }]
+      };
+      
+      const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+      document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
+
+      // Injeta um Service Worker vazio (Requisito do Chrome para mostrar botão de Instalar)
+      const swCode = "self.addEventListener('install', e => e.waitUntil(self.skipWaiting())); self.addEventListener('activate', e => e.waitUntil(self.clients.claim())); self.addEventListener('fetch', e => {});";
+      const swBlob = new Blob([swCode], {type: 'text/javascript'});
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+      }
+
+      // Intercepta o banner nativo do Android e mostra nosso botão personalizado no topo
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); // Impede o mini-infobar de aparecer automaticamente
+        deferredPrompt = e;
+        const installBtn = document.getElementById('install-btn');
+        installBtn.classList.remove('hidden'); // Mostra o botão
+
+        installBtn.addEventListener('click', async () => {
+          deferredPrompt.prompt(); // Mostra o prompt oficial do sistema (tipo APK)
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            installBtn.classList.add('hidden'); // Esconde após instalar
+          }
+          deferredPrompt = null;
+        });
+      });
+    }
+
+    // --- FUNÇÕES DE PERSONAGEM (PAINEL ESQUERDO) ---
+    function quickFillCharacter() {
+      if (appState.activeStoryId) return; // Bloqueado se história iniciada
+      const presets = [
+        { name: "Kaelen", role: "Protagonista", archetype: "Guerreiro", motivation: "Vingança", flaw: "Impulsivo" },
+        { name: "Sora", role: "Secundário", archetype: "Maga Cega", motivation: "Redenção", flaw: "Guarda um segredo sombrio" }
+      ];
+      const p = presets[Math.floor(Math.random() * presets.length)];
+      document.getElementById('char-name').value = p.name;
+      document.getElementById('char-role').value = p.role;
+      document.getElementById('char-archetype').value = p.archetype;
+      document.getElementById('char-motivation').value = p.motivation;
+      document.getElementById('char-flaw').value = p.flaw;
+    }
+
+    function addCharacter() {
+      if (appState.activeStoryId) {
+        showToast("Não é possível alterar personagens de uma história já em andamento.", "warning");
+        return;
+      }
+      const name = document.getElementById('char-name').value.trim();
+      if (!name) return showToast("Digite o nome!", "warning");
+
+      tempCharacters.push({
+        id: Date.now().toString(),
+        name,
+        role: document.getElementById('char-role').value,
+        archetype: document.getElementById('char-archetype').value,
+        motivation: document.getElementById('char-motivation').value,
+        flaw: document.getElementById('char-flaw').value
+      });
+
+      document.getElementById('char-name').value = '';
+      document.getElementById('char-archetype').value = '';
+      document.getElementById('char-motivation').value = '';
+      document.getElementById('char-flaw').value = '';
+      renderCharacters();
+    }
+
+    function removeCharacter(id) {
+      if (appState.activeStoryId) return;
+      tempCharacters = tempCharacters.filter(c => c.id !== id);
+      renderCharacters();
+    }
+
+    function renderCharacters(chars = tempCharacters) {
+      const list = document.getElementById('characters-list');
+      const countTag = document.getElementById('char-count-tag');
+      countTag.innerText = `${chars.length} Personagens`;
+
+      if (chars.length === 0) {
+        list.innerHTML = `<p class="text-xs text-slate-500 text-center py-4 italic" id="empty-char-msg">Nenhum personagem.</p>`;
+        return;
+      }
+
+      list.innerHTML = chars.map(char => `
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-start justify-between gap-3 text-xs relative">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-bold text-slate-100 text-sm">${char.name}</span>
+              <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px]">${char.role}</span>
+            </div>
+            <p class="text-slate-400">Traço: ${char.archetype} | Motivação: ${char.motivation}</p>
+          </div>
+          ${!appState.activeStoryId ? `
+          <button onclick="removeCharacter('${char.id}')" class="text-slate-500 hover:text-rose-400 transition shrink-0">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>` : ''}
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // --- SISTEMA DE ABAS ---
+    function renderTabs() {
+      const container = document.getElementById('tabs-container');
+      
+      let html = `<button onclick="switchTab(null)" class="px-4 py-2 text-sm font-medium rounded-t-lg transition flex items-center gap-2 shrink-0 ${appState.activeStoryId === null ? 'bg-slate-900 text-indigo-400 border-t-2 border-indigo-500' : 'bg-slate-800 text-slate-400 hover:bg-slate-800/80'}">
+        <i data-lucide="plus" class="w-4 h-4"></i> Nova História
+      </button>`;
+
+      appState.stories.forEach(story => {
+        const isActive = appState.activeStoryId === story.id;
+        html += `
+          <div class="flex items-center shrink-0 ${isActive ? 'bg-slate-900 border-t-2 border-indigo-500' : 'bg-slate-800 border-t-2 border-transparent'} rounded-t-lg transition group">
+            <button onclick="switchTab('${story.id}')" class="px-4 py-2 text-sm font-medium ${isActive ? 'text-slate-100' : 'text-slate-400 hover:text-slate-200'}">
+              ${story.title}
+            </button>
+            <button onclick="deleteStory('${story.id}')" class="pr-3 text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition" title="Excluir História">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function switchTab(id) {
+      appState.activeStoryId = id;
+      renderTabs();
+      renderActiveStory();
+    }
+
+    function deleteStory(id) {
+      appState.stories = appState.stories.filter(s => s.id !== id);
+      if (appState.activeStoryId === id) appState.activeStoryId = null;
+      saveState();
+      renderTabs();
+      renderActiveStory();
+      showToast("História removida.");
+    }
+
+    // --- RENDERIZAR HISTÓRIA ATUAL ---
+    function renderActiveStory() {
+      const container = document.getElementById('episodes-container');
+      const form = document.getElementById('character-form');
+      const settings = document.getElementById('settings-form');
+      const inputPrompt = document.getElementById('user-prompt');
+
+      hideSuggestion();
+
+      if (appState.activeStoryId === null) {
+        // Modo Criação
+        form.style.opacity = '1';
+        form.style.pointerEvents = 'auto';
+        settings.style.opacity = '1';
+        settings.style.pointerEvents = 'auto';
+        
+        renderCharacters(tempCharacters);
+        
+        container.innerHTML = `
+          <div class="flex gap-4">
+            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-1">
+              <i data-lucide="bot" class="w-4 h-4 text-white"></i>
+            </div>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl rounded-tl-none p-4 text-slate-200 text-sm sm:text-base shadow-md">
+              Saudações! Preparado para uma nova aventura?<br><br>
+              <strong>1.</strong> Adicione os personagens no painel à esquerda.<br>
+              <strong>2.</strong> Escolha o mundo e atmosfera.<br>
+              <strong>3.</strong> Digite abaixo a ação inicial ou premissa (Ex: <em>Nossos heróis chegam à taverna...</em>) para gerarmos o primeiro episódio!
+            </div>
+          </div>
+        `;
+        inputPrompt.placeholder = "Como a nossa história começa?";
+        inputPrompt.value = '';
+      } else {
+        // Modo Visualização / Continuação
+        const story = appState.stories.find(s => s.id === appState.activeStoryId);
+        
+        // Travar painel esquerdo
+        form.style.opacity = '0.5';
+        form.style.pointerEvents = 'none';
+        settings.style.opacity = '0.5';
+        settings.style.pointerEvents = 'none';
+        
+        // Atualizar painel esquerdo com dados da história salva
+        document.getElementById('story-genre').value = story.genre;
+        document.getElementById('story-tone').value = story.tone;
+        document.getElementById('story-setting').value = story.setting;
+        renderCharacters(story.characters);
+
+        // Renderizar episódios
+        container.innerHTML = '';
+        story.episodes.forEach(ep => {
+          // Ação do usuário
+          container.innerHTML += `
+            <div class="flex gap-4 justify-end">
+              <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3 px-4 text-sm sm:text-base max-w-[85%] shadow-md">
+                ${ep.userPrompt}
+              </div>
+            </div>
+          `;
+          // Resposta da IA (Episódio)
+          container.innerHTML += `
+            <div class="flex gap-4">
+              <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center shrink-0 mt-1 shadow-lg shadow-indigo-500/20">
+                <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+              </div>
+              <div class="bg-slate-800 border border-slate-700 rounded-2xl rounded-tl-none p-5 text-slate-200 text-base font-serif leading-relaxed shadow-md group relative">
+                ${formatText(ep.text)}
+                
+                <button onclick="readEpisode(this)" data-text="${encodeURIComponent(ep.text)}" class="absolute -right-3 -top-3 w-8 h-8 bg-slate-700 hover:bg-indigo-500 rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition shadow-lg border border-slate-600" title="Ler em Voz Alta">
+                  <i data-lucide="volume-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        inputPrompt.placeholder = "O que acontece agora?";
+        inputPrompt.value = '';
+
+        // Exibir última sugestão, se houver
+        const lastEp = story.episodes[story.episodes.length - 1];
+        if (lastEp && lastEp.suggestion) {
+          showSuggestion(lastEp.suggestion);
+        }
+      }
+      lucide.createIcons();
+      scrollToBottom();
+    }
+
+    // --- LÓGICA DE GERAÇÃO (GEMINI) ---
+    async function submitAction() {
+      const input = document.getElementById('user-prompt');
+      const action = input.value.trim();
+      
+      if (!action) return showToast("Digite uma ação ou ideia!", "warning");
+      
+      if (appState.activeStoryId === null && tempCharacters.length === 0) {
+        return showToast("Adicione pelo menos um personagem para iniciar!", "warning");
+      }
+
+      input.value = '';
+      hideSuggestion();
+      document.getElementById('typing-indicator').classList.remove('hidden');
+      document.getElementById('send-action-btn').disabled = true;
+
+      // Renderizar balão do usuário na UI imediatamente
+      const container = document.getElementById('episodes-container');
+      
+      // Remover balão inicial se for a primeira mensagem
+      if (appState.activeStoryId === null) {
+        container.innerHTML = ''; 
+      }
+      
+      container.innerHTML += `
+        <div class="flex gap-4 justify-end">
+          <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3 px-4 text-sm sm:text-base max-w-[85%] shadow-md">
+            ${action}
+          </div>
+        </div>
+      `;
+      scrollToBottom();
+
+      const apiKey = ""; 
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      try {
+        let story, payload;
+
+        if (appState.activeStoryId === null) {
+          // Criando uma NOVA história
+          const genre = document.getElementById('story-genre').value;
+          const tone = document.getElementById('story-tone').value;
+          const setting = document.getElementById('story-setting').value;
+          
+          const charStr = tempCharacters.map(c => `${c.name} (${c.role}): ${c.archetype}, Busca: ${c.motivation}, Fraqueza: ${c.flaw}`).join(" | ");
+
+          const systemPrompt = `Você é o Narrador de um RPG épico guiando uma aventura interativa em texto.
+O usuário vai ditar as ações. Você narra os resultados, escrevendo o próximo episódio da história com descrições ricas, desenvolvimento de personagens, diálogos e emoção em parágrafos bem estruturados.
+REGRA CRÍTICA: No final da sua resposta, forneça exatamente UMA sugestão curta de como o usuário pode continuar. Formate-a OBRIGATORIAMENTE assim: 
+SUGESTÃO: [Sua sugestão de ação aqui]`;
+
+          const initialUserPrompt = `Vamos iniciar uma nova história!
+Gênero: ${genre}
+Atmosfera: ${tone}
+Cenário: ${setting}
+Elenco: ${charStr}
+
+AÇÃO INICIAL DO JOGADOR: ${action}
+
+(Se esta for a primeira mensagem, crie um título para a história na primeira linha usando o formato '# Titulo', depois narre a ação inicial.)`;
+
+          payload = {
+            contents: [{ role: "user", parts: [{ text: initialUserPrompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
+          };
+
+          const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const data = await response.json();
+          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (!generatedText) throw new Error("Sem resposta.");
+
+          const { cleanText, suggestion, title } = parseResponse(generatedText, "Nova Aventura");
+
+          story = {
+            id: Date.now().toString(),
+            title: title,
+            genre, tone, setting,
+            characters: [...tempCharacters],
+            episodes: [{ userPrompt: action, text: cleanText, suggestion: suggestion }],
+            history: [
+              { role: "user", parts: [{ text: initialUserPrompt }] },
+              { role: "model", parts: [{ text: generatedText }] } // Salva o texto bruto no histórico para manter o padrão
+            ]
+          };
+
+          appState.stories.push(story);
+          appState.activeStoryId = story.id;
+          tempCharacters = []; // Limpar painel temp
+
+        } else {
+          // CONTINUANDO história existente
+          story = appState.stories.find(s => s.id === appState.activeStoryId);
+          
+          const newHistory = [...story.history, { role: "user", parts: [{ text: action }] }];
+          
+          payload = {
+            contents: newHistory,
+            // Importante: Passar o systemInstruction novamente no request de turnos subsequentes
+             systemInstruction: { parts: [{ text: `Você é o Narrador de um RPG épico guiando uma aventura interativa em texto.
+O usuário vai ditar as ações. Você narra os resultados, escrevendo o próximo episódio da história com descrições ricas.
+REGRA CRÍTICA: No final da sua resposta, forneça exatamente UMA sugestão curta. Formate-a OBRIGATORIAMENTE assim: 
+SUGESTÃO: [Sua sugestão de ação aqui]` }] }
+          };
+
+          const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const data = await response.json();
+          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (!generatedText) throw new Error("Sem resposta.");
+
+          const { cleanText, suggestion } = parseResponse(generatedText, story.title);
+
+          story.history.push({ role: "user", parts: [{ text: action }] });
+          story.history.push({ role: "model", parts: [{ text: generatedText }] });
+          story.episodes.push({ userPrompt: action, text: cleanText, suggestion: suggestion });
+        }
+
+        saveState();
+        renderTabs();
+        renderActiveStory();
+
+      } catch (e) {
+        console.error(e);
+        showToast("Houve um erro na força narrativa. Tente novamente.", "error");
+        // Remover balão do usuário caso dê erro para ele poder tentar de novo
+        renderActiveStory(); 
+      } finally {
+        document.getElementById('typing-indicator').classList.add('hidden');
+        document.getElementById('send-action-btn').disabled = false;
+      }
+    }
+
+    function parseResponse(rawText, defaultTitle) {
+      let title = defaultTitle;
+      let cleanText = rawText;
+      let suggestion = "";
+
+      // Extrair Título (se houver '#' na primeira linha)
+      const lines = rawText.split('\n');
+      if (lines[0].startsWith('#')) {
+        title = lines[0].replace(/^#+\s*/, '').trim();
+        lines.shift();
+        cleanText = lines.join('\n').trim();
+      }
+
+      // Extrair Sugestão
+      const sugMatch = cleanText.match(/(?:SUGESTÃO|Sugestão):\s*(.*)/is);
+      if (sugMatch) {
+        suggestion = sugMatch[1].trim();
+        cleanText = cleanText.replace(sugMatch[0], '').trim();
+      }
+
+      return { title, cleanText, suggestion };
+    }
+
+    function formatText(text) {
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                 .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                 .replace(/\n/g, '<br>');
+    }
+
+    // --- UI HELPERS ---
+    function scrollToBottom() {
+      const c = document.getElementById('episodes-container');
+      setTimeout(() => c.scrollTo(0, c.scrollHeight), 100);
+    }
+
+    function showSuggestion(text) {
+      const box = document.getElementById('ai-suggestion-box');
+      const btn = document.getElementById('ai-suggestion-text');
+      currentSuggestion = text;
+      btn.innerText = text;
+      box.classList.remove('hidden');
+    }
+
+    function hideSuggestion() {
+      document.getElementById('ai-suggestion-box').classList.add('hidden');
+      currentSuggestion = "";
+    }
+
+    function useSuggestion() {
+      if (currentSuggestion) {
+        const input = document.getElementById('user-prompt');
+        input.value = currentSuggestion;
+        input.focus();
+        hideSuggestion();
+      }
+    }
+
+    // --- LEITURA TTS ---
+    async function readEpisode(btnElement) {
+      const text = decodeURIComponent(btnElement.getAttribute('data-text'));
+      const icon = btnElement.querySelector('i');
+      
+      icon.setAttribute('data-lucide', 'loader-2');
+      icon.classList.add('animate-spin');
+      lucide.createIcons();
+
+      const payload = {
+        contents: [{ parts: [{ text: `Narre com tom expressivo e teatral: ${text.slice(0, 1000)}` }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Fenrir" } } }
+        },
+        model: "gemini-2.5-flash-preview-tts"
+      };
+
+      try {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=`;
+        const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const result = await response.json();
+        
+        const audioData = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        const mimeType = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType;
+
+        if (audioData) {
+          const sampleRate = mimeType.match(/rate=(\d+)/) ? parseInt(mimeType.match(/rate=(\d+)/)[1], 10) : 24000;
+          const wavBlob = pcmToWav(new Int16Array(base64ToArrayBuffer(audioData)), sampleRate);
+          const player = document.getElementById('tts-player');
+          player.src = URL.createObjectURL(wavBlob);
+          player.play();
+          showToast("Reproduzindo narração!");
+        }
+      } catch (err) {
+        showToast("Erro ao carregar o áudio.", "error");
+      } finally {
+        icon.classList.remove('animate-spin');
+        icon.setAttribute('data-lucide', 'volume-2');
+        lucide.createIcons();
+      }
+    }
+
+    // Audio Utils
+    function base64ToArrayBuffer(base64) {
+      const binaryString = window.atob(base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    function pcmToWav(pcm16Array, sampleRate) {
+      const buffer = new ArrayBuffer(44 + pcm16Array.length * 2);
+      const view = new DataView(buffer);
+      const writeStr = (offset, string) => { for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i)); };
+      
+      writeStr(0, 'RIFF'); view.setUint32(4, 36 + pcm16Array.length * 2, true); writeStr(8, 'WAVE');
+      writeStr(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+      view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true); writeStr(36, 'data'); view.setUint32(40, pcm16Array.length * 2, true);
+      
+      for (let i = 0, offset = 44; i < pcm16Array.length; i++, offset += 2) view.setInt16(offset, pcm16Array[i], true);
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    // Utils
+    async function fetchWithRetry(url, options, retries = 3) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const res = await fetch(url, options);
+          if (res.ok) return res;
+        } catch (e) { if (i === retries - 1) throw e; }
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i)));
+      }
+    }
+
+    function showToast(msg, type = "success") {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      const i = document.getElementById('toast-icon');
+      i.setAttribute('data-lucide', type === 'error' ? 'alert-circle' : type === 'warning' ? 'alert-triangle' : 'check-circle-2');
+      i.className = `w-5 h-5 ${type === 'error' ? 'text-rose-400' : type === 'warning' ? 'text-amber-400' : 'text-emerald-400'}`;
+      lucide.createIcons();
+      t.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3500);
+    }
+
+    // State Persistence
+    function saveState() {
+      localStorage.setItem('fabulas_rpg_state', JSON.stringify(appState.stories));
+    }
+    function loadState() {
+      try {
+        const stored = localStorage.getItem('fabulas_rpg_state');
+        if (stored) appState.stories = JSON.parse(stored);
+      } catch (e) { appState.stories = []; }
+    }
+  </script>
+</body>
+</html>
